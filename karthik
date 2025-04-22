@@ -1,0 +1,256 @@
+import java.util.*;
+
+class User {
+    private String name;
+    private String password;
+    private String registrationNumber;
+
+    public User(String name, String password, String registrationNumber) {
+
+        this.name = name;
+        this.password = password;
+        this.registrationNumber = registrationNumber;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getRegistrationNumber() {
+        return registrationNumber;
+    }
+
+    public boolean checkPassword(String password) {
+        return this.password.equals(password);
+    }
+}
+
+class Question {
+    private String questionText;
+    private String[] options;
+    private int correctAnswerIndex;
+
+    public Question(String questionText, String[] options, int correctAnswerIndex) {
+        this.questionText = questionText;
+        this.options = options;
+        this.correctAnswerIndex = correctAnswerIndex;
+    }
+
+    public String getQuestionText() {
+        return questionText;
+    }
+
+    public String[] getOptions() {
+        return options;
+    }
+
+    public boolean checkAnswer(int answerIndex) {
+        return answerIndex == correctAnswerIndex;
+    }
+
+    public String getCorrectAnswer() {
+        return options[correctAnswerIndex];
+    }
+}
+
+class Exam {
+    private List<Question> questions;
+    private int score;
+    private List<Question> wrongQuestions;
+    private int timeLimit; // Time limit in seconds
+
+    public Exam(int timeLimit) {
+        this.questions = new ArrayList<>();
+        this.score = 0;
+        this.wrongQuestions = new ArrayList<>();
+        this.timeLimit = timeLimit;
+    }
+
+    public void addQuestion(Question question) {
+        questions.add(question);
+    }
+
+    public void conductExam(User user) {
+        System.out.println("Starting exam for " + user.getName() + " (Reg No: " + user.getRegistrationNumber() + ")");
+        Collections.shuffle(questions); // Shuffle questions to randomize the exam
+
+        Scanner scanner = new Scanner(System.in);
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + timeLimit * 1000; // convert seconds to milliseconds
+
+        for (Question question : questions) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime >= endTime) {
+                System.out.println("Time's up!");
+                break;
+            }
+
+            System.out.println(question.getQuestionText());
+            String[] options = question.getOptions();
+            for (int i = 0; i < options.length; i++) {
+                System.out.println((i + 1) + ". " + options[i]);
+            }
+
+            long remainingTime = (endTime - currentTime) / 1000;
+            System.out.println("Time remaining: " + remainingTime / 60 + " minutes " + remainingTime % 60 + " seconds");
+
+            int answer = -1;
+            while (true) {
+                try {
+                    System.out.print("Your answer (1-" + options.length + "): ");
+                    answer = Integer.parseInt(scanner.nextLine()) - 1;
+                    if (answer >= 0 && answer < options.length) {
+                        break;
+                    }
+                } catch (NumberFormatException e) {
+                    // ignore and reprompt
+                }
+                System.out.println("Invalid input. Please enter a number between 1 and " + options.length + ".");
+            }
+
+            if (question.checkAnswer(answer)) {
+                score++;
+                System.out.println("Correct!");
+            } else {
+                wrongQuestions.add(question);
+                System.out.println("Wrong! Correct answer was: " + question.getCorrectAnswer());
+            }
+            System.out.println();
+        }
+
+        System.out.println("Exam finished! Your score: " + score + "/" + questions.size());
+        double percentage = ((double) score / questions.size()) * 100;
+        System.out.printf("You scored %.2f%%\n", percentage);
+        if (percentage >= 90) {
+            System.out.println("Excellent performance!");
+        } else if (percentage >= 75) {
+            System.out.println("Good job!");
+        } else if (percentage >= 50) {
+            System.out.println("You passed.");
+        } else if (percentage >= 40) {
+            System.out.println("You failed. Better luck next time.");
+        } else {
+            System.out.println("You have to rewrite the exam because you have been failed.");
+        }
+
+        if (!wrongQuestions.isEmpty()) {
+            System.out.println("\nReview your mistakes:");
+            for (Question wrongQuestion : wrongQuestions) {
+                System.out.println(wrongQuestion.getQuestionText());
+                System.out.println("Correct answer: " + wrongQuestion.getCorrectAnswer());
+                System.out.println();
+            }
+        }
+    }
+}
+
+public class OnlineExaminationSystem1 {
+    private static Map<String, User> userDatabase = new HashMap<>();
+    private static Scanner scanner = new Scanner(System.in);
+    private static Map<String, List<Question>> subjectQuestionBank = new HashMap<>();
+
+    public static void main(String[] args) {
+        loadQuestionBank();
+        while (true) {
+            System.out.println("1. Register");
+            System.out.println("2. Login");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+            int option = Integer.parseInt(scanner.nextLine());
+
+            switch (option) {
+                case 1:
+                    registerUser();
+                    break;
+                case 2:
+                    loginUser();
+                    break;
+                case 3:
+                    System.out.println("Exiting system...");
+                    return;
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
+    }
+
+    private static void registerUser() {
+        System.out.print("Enter your name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter your password: ");
+        String password = scanner.nextLine();
+        System.out.print("Enter your university registration number: ");
+        String registrationNumber = scanner.nextLine();
+        userDatabase.put(name, new User(name, password, registrationNumber));
+        System.out.println("Registration successful!");
+    }
+
+    private static void loginUser() {
+        System.out.print("Enter your name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter your password: ");
+        String password = scanner.nextLine();
+
+        User user = userDatabase.get(name);
+        if (user != null && user.checkPassword(password)) {
+            System.out.println("Login successful!");
+            chooseSubjectAndTakeExam(user);
+        } else {
+            System.out.println("Invalid name or password. Try again.");
+        }
+    }
+
+    private static void chooseSubjectAndTakeExam(User user) {
+        System.out.println("Available subjects:");
+        List<String> subjects = new ArrayList<>(subjectQuestionBank.keySet());
+        for (int i = 0; i < subjects.size(); i++) {
+            System.out.println((i + 1) + ". " + subjects.get(i));
+        }
+
+        int subjectIndex = -1;
+        while (true) {
+            try {
+                System.out.print("Choose a subject (1-" + subjects.size() + "): ");
+                subjectIndex = Integer.parseInt(scanner.nextLine()) - 1;
+                if (subjectIndex >= 0 && subjectIndex < subjects.size()) {
+                    break;
+                }
+            } catch (NumberFormatException e) {
+                // ignore and reprompt
+            }
+            System.out.println("Invalid input. Please enter a number between 1 and " + subjects.size() + ".");
+        }
+
+        String chosenSubject = subjects.get(subjectIndex);
+        List<Question> chosenQuestions = subjectQuestionBank.get(chosenSubject);
+
+        Exam exam = new Exam(300); // 5 minutes time limit
+        for (Question question : chosenQuestions) {
+            exam.addQuestion(question);
+        }
+
+        exam.conductExam(user);
+    }
+
+    private static void loadQuestionBank() {
+        // Add questions for each subject
+        List<Question> mathQuestions = new ArrayList<>();
+        mathQuestions.add(new Question("What is 2 + 2?", new String[]{"3", "4", "5"}, 1));
+        mathQuestions.add(new Question("What is the square root of 16?", new String[]{"3", "4", "5"}, 1));
+        mathQuestions.add(new Question("What is 5 * 5?", new String[]{"20", "25", "30"}, 1));
+
+        List<Question> scienceQuestions = new ArrayList<>();
+        scienceQuestions.add(new Question("What planet is known as the Red Planet?", new String[]{"Earth", "Mars", "Jupiter"}, 1));
+        scienceQuestions.add(new Question("What is the chemical symbol for water?", new String[]{"H2O", "O2", "CO2"}, 0));
+        scienceQuestions.add(new Question("What is the speed of light?", new String[]{"300,000 km/s", "150,000 km/s", "450,000 km/s"}, 0));
+
+        List<Question> historyQuestions = new ArrayList<>();
+        historyQuestions.add(new Question("Who was the first President of the United States?", new String[]{"George Washington", "Thomas Jefferson", "Abraham Lincoln"}, 0));
+        historyQuestions.add(new Question("In which year did the Titanic sink?", new String[]{"1912", "1913", "1914"}, 0));
+        historyQuestions.add(new Question("Who wrote the Declaration of Independence?", new String[]{"John Adams", "Thomas Jefferson", "Benjamin Franklin"}, 1));
+
+        subjectQuestionBank.put("Mathematics", mathQuestions);
+        subjectQuestionBank.put("Science", scienceQuestions);
+        subjectQuestionBank.put("History", historyQuestions);
+    }
+}
