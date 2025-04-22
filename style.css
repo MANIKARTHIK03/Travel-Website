@@ -1,0 +1,45 @@
+.booking, .blog {
+  padding: 40px 20px;
+  background-color: #fff;
+  margin: 40px 0;
+  text-align: center;
+}
+
+.booking form {
+  max-width: 400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 15px;
+  text-align: left;
+}
+
+.booking label {
+  font-weight: bold;
+}
+
+.booking input, .booking select, .booking button {
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.booking button {
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.booking button:hover {
+  background-color: #006fce;
+}
+
+.blog article {
+  background-color: #f0f8ff;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
